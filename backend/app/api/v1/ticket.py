@@ -1,27 +1,55 @@
-from fastapi import APIRouter, HTTPException
-from typing import List
+from typing import List, Optional
+from fastapi import APIRouter, HTTPException, Query
 from app.core.db import get_connection
 from app.schemas.ticket import TicketCreate, TicketUpdate, TicketResponse
 
-router = APIRouter(tags=["Tickets"])
+router = APIRouter(prefix="/tickets", tags=["Tickets"])
+
 
 
 # GET ALL TICKETS
-@router.get("/tickets", response_model=List[TicketResponse])
-def get_tickets():
+@router.get("", response_model=List[TicketResponse])
+def list_tickets(
+    status: Optional[str] = Query(None),
+    priority: Optional[str] = Query(None),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+):
     conn = get_connection()
-    cursor = conn.cursor()
-    rows = cursor.execute("SELECT * FROM tickets").fetchall()
-    conn.close()
-    return [dict(row) for row in rows]
 
+    query = "SELECT * FROM tickets WHERE 1=1"
+    params = []
+
+    if status:
+        query += " AND status = ?"
+        params.append(status)
+
+    if priority:
+        query += " AND priority = ?"
+        params.append(priority)
+
+    query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+    params.extend([limit, offset])
+
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+
+    return [
+        TicketResponse(
+            id=row["id"],
+            title=row["title"],
+            description=row["description"],
+            status=row["status"],
+            priority=row["priority"],
+        )
+        for row in rows
+    ]
 
 # GET TICKET BY ID
-@router.get("/tickets/{ticket_id}", response_model=TicketResponse)
+@router.get("/{ticket_id}", response_model=TicketResponse)
 def get_ticket(ticket_id: int):
     conn = get_connection()
-    cursor = conn.cursor()
-    row = cursor.execute(
+    row = conn.execute(
         "SELECT * FROM tickets WHERE id = ?", (ticket_id,)
     ).fetchone()
     conn.close()
@@ -29,11 +57,17 @@ def get_ticket(ticket_id: int):
     if not row:
         raise HTTPException(status_code=404, detail="Ticket not found")
 
-    return dict(row)
+    return TicketResponse(
+        id=row["id"],
+        title=row["title"],
+        description=row["description"],
+        status=row["status"],
+        priority=row["priority"],
+    )
 
 
 # CREATE TICKET
-@router.post("/tickets", response_model=TicketResponse)
+@router.post("/", response_model=TicketResponse)
 def create_ticket(ticket: TicketCreate):
     conn = get_connection()
     cursor = conn.cursor()
@@ -43,28 +77,40 @@ def create_ticket(ticket: TicketCreate):
         INSERT INTO tickets (title, description, status, priority)
         VALUES (?, ?, ?, ?)
         """,
-        (ticket.title, ticket.description, ticket.status, ticket.priority)
+        (
+            ticket.title,
+            ticket.description,
+            ticket.status.value,
+            ticket.priority.value,
+        ),
     )
 
     conn.commit()
-    new_id = cursor.lastrowid
+    ticket_id = cursor.lastrowid
+
+    row = cursor.execute(
+        "SELECT * FROM tickets WHERE id = ?", (ticket_id,)
+    ).fetchone()
+
     conn.close()
 
-    return {
-        "id": new_id,
-        **ticket.dict(),
-    }
+    return TicketResponse(
+        id=row["id"],
+        title=row["title"],
+        description=row["description"],
+        status=row["status"],
+        priority=row["priority"],
+    )
 
 
 # UPDATE TICKET
-@router.put("/tickets/{ticket_id}", response_model=TicketResponse)
+@router.put("/{ticket_id}", response_model=TicketResponse)
 def update_ticket(ticket_id: int, ticket: TicketUpdate):
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Check exists
     existing = cursor.execute(
-        "SELECT * FROM tickets WHERE id = ?", (ticket_id,)
+        "SELECT id FROM tickets WHERE id = ?", (ticket_id,)
     ).fetchone()
 
     if not existing:
@@ -81,28 +127,42 @@ def update_ticket(ticket_id: int, ticket: TicketUpdate):
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
         """,
-        (ticket.title, ticket.description, ticket.status, ticket.priority, ticket_id)
+        (
+            ticket.title,
+            ticket.description,
+            ticket.status.value if ticket.status else None,
+            ticket.priority.value if ticket.priority else None,
+            ticket_id,
+        ),
     )
 
     conn.commit()
 
-    updated = cursor.execute(
+    row = cursor.execute(
         "SELECT * FROM tickets WHERE id = ?", (ticket_id,)
     ).fetchone()
 
     conn.close()
 
-    return dict(updated)
+    return TicketResponse(
+        id=row["id"],
+        title=row["title"],
+        description=row["description"],
+        status=row["status"],
+        priority=row["priority"],
+    )
 
 
 # DELETE TICKET
-@router.delete("/tickets/{ticket_id}")
+@router.delete("/{ticket_id}")
 def delete_ticket(ticket_id: int):
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Verify exists
-    row = cursor.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
+    row = cursor.execute(
+        "SELECT id FROM tickets WHERE id = ?", (ticket_id,)
+    ).fetchone()
+
     if not row:
         conn.close()
         raise HTTPException(status_code=404, detail="Ticket not found")

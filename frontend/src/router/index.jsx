@@ -1,10 +1,17 @@
-import { createBrowserRouter } from "react-router-dom";
-import TicketList from "../pages/TicketList";
-import NewTicket from "../pages/NewTicket";
-import EditTicket from "../pages/EditTicket";
+import { createBrowserRouter } from "react-router-dom"
+import Layout from "@/layouts/Layout"
+
+import TableList from "@/components/Table/TableLIst"
 
 export const router = createBrowserRouter([
-  { path: "/tickets", element: <TicketList /> },
-  { path: "/tickets/new", element: <NewTicket /> },
-  { path: "/tickets/edit/:id", element: <EditTicket /> },
-]);
+  {
+    path: "/",
+    element: <Layout />,
+    children: [
+      {
+        index: true,
+        element: <TableList />,
+      },
+    ],
+  },
+])

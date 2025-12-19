@@ -21,7 +21,7 @@ env/
 
 
 *.log
-*.db            # SQLite databases (helpdesk.db)
+*.db
 instance/
 
 node_modules/

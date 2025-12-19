@@ -1,39 +1,33 @@
-export default function Layout({ children }) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: "#f5f5f5",
-          padding: "0",
-          margin: "0",
-        }}
-      >
-        <header
-          style={{
-            padding: "20px",
-            background: "#242424",
-            color: "#fff",
-            fontSize: "28px",
-            fontWeight: "bold",
-            textAlign: "center",
+import { useTickets } from "@/hooks/useTickets"
+import { useRef } from "react"
+import Navbar from "@/components/Navbar"
+import { Outlet } from "react-router-dom"
+import TicketModalForm from "@/components/Tickets/TicketModalForm"
+
+export default function Layout() {
+  const ticketsHook = useTickets()
+  const modalRef = useRef(null)
+
+  const openCreate = () => modalRef.current.openForCreate()
+  const openEdit = (ticket) => modalRef.current.openForEdit(ticket)
+
+  return (
+    <>
+      <Navbar onCreateTicket={openCreate} />
+
+      <main className="p-6">
+        <Outlet
+          context={{
+            ...ticketsHook,
+            openEditTicket: openEdit,
           }}
-        >
-          HelpDesk Lite
-        </header>
-  
-        <main
-          style={{
-            maxWidth: "800px",
-            margin: "40px auto",
-            background: "#fff",
-            padding: "30px",
-            borderRadius: "8px",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-          }}
-        >
-          {children}
-        </main>
-      </div>
-    );
-  }
-  
+        />
+      </main>
+
+      <TicketModalForm
+        ref={modalRef}
+        onSuccess={ticketsHook.fetchTickets}
+      />
+    </>
+  )
+}

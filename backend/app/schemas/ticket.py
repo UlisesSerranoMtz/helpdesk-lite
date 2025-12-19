@@ -3,15 +3,15 @@ from enum import Enum
 
 
 class StatusEnum(str, Enum):
-    open = "Open"
-    in_progress = "In Progress"
-    resolved = "Resolved"
+    open = "open"
+    in_progress = "in_progress"
+    resolved = "resolved"
 
 
 class PriorityEnum(str, Enum):
-    low = "Low"
-    medium = "Medium"
-    high = "High"
+    low = "low"
+    medium = "medium"
+    high = "high"
 
 
 class TicketBase(BaseModel):
