@@ -67,7 +67,7 @@ def get_ticket(ticket_id: int):
 
 
 # CREATE TICKET
-@router.post("/", response_model=TicketResponse)
+@router.post("", response_model=TicketResponse)
 def create_ticket(ticket: TicketCreate):
     conn = get_connection()
     cursor = conn.cursor()
