@@ -6,11 +6,16 @@ export function useTickets() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const fetchTickets = async () => {
+  const [filters, setFilters] = useState({
+    status: "",
+    priority: "",
+    search: "",
+  })
+  const fetchTickets = async (customFilters = filters) => {
     try {
       setLoading(true)
       setError(null)
-      const data = await getTickets()
+      const data = await getTickets(customFilters)
       setTickets(data)
     } catch (err) {
       setError(err.message)
@@ -26,12 +31,14 @@ export function useTickets() {
 
   useEffect(() => {
     fetchTickets()
-  }, [])
+  }, [filters])
 
   return {
     tickets,
     loading,
     error,
+    filters,
+    setFilters,
     fetchTickets,
     removeTicket,
   }

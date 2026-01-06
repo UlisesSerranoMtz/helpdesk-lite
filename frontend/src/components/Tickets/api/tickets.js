@@ -1,8 +1,21 @@
 const API_URL = import.meta.env.VITE_API_URL
 
-export async function getTickets() {
-  const res = await fetch(`${API_URL}/tickets`)
+export async function getTickets(filters = {}) {
+  const params = new URLSearchParams()
+
+  if (filters.status) params.append("status", filters.status)
+  if (filters.priority) params.append("priority", filters.priority)
+  if (filters.search) params.append("search", filters.search)
+
+  const query = params.toString()
+  const url = query
+    ? `${API_URL}/tickets?${query}`
+    : `${API_URL}/tickets`
+
+  const res = await fetch(url)
+
   if (!res.ok) throw new Error("Error fetching tickets")
+
   return res.json()
 }
 

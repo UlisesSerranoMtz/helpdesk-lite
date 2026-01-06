@@ -3,15 +3,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.db import init_db
 from app.api.v1.ticket import router as ticket_router
+from app.core.config import CORS_ORIGINS
 
 app = FastAPI(title="Helpdesk API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "DELETE", "POST", "PUT", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"]
 )
 @app.on_event("startup")
 def startup():

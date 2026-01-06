@@ -9,16 +9,52 @@ export default function TableList() {
     tickets,
     loading,
     error,
+    filters,
+    setFilters,
     removeTicket,
     openEditTicket,
   } = useOutletContext()
 
   const deleteModalRef = useRef(null)
 
-  if (error) return <div className="alert alert-error mt-10">{error}</div>
+  if (loading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-base-100/70 z-50">
+        <span className="loading loading-spinner loading-xl"></span>
+      </div>
+    )
+  }  
 
   return (
     <>
+      <div className="flex gap-4 mb-4">
+        <select
+          className="select select-bordered"
+          value={filters.status}
+          onChange={(e) =>
+            setFilters({ ...filters, status: e.target.value })
+          }
+        >
+          <option value="">All status</option>
+          <option value="open">Open</option>
+          <option value="in_progress">In progress</option>
+          <option value="closed">Closed</option>
+        </select>
+
+        <select
+          className="select select-bordered"
+          value={filters.priority}
+          onChange={(e) =>
+            setFilters({ ...filters, priority: e.target.value })
+          }
+        >
+          <option value="">All priority</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+
       <table className="table">
         <thead>
           <tr>

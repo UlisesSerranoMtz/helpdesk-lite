@@ -1,9 +1,6 @@
 import sqlite3
 from pathlib import Path
-
-DB_PATH = Path(__file__).resolve().parent.parent.parent / "helpdesk.db"
-
-print("DB PATH:", DB_PATH)
+from app.core.config import DB_PATH
 
 def get_connection():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
