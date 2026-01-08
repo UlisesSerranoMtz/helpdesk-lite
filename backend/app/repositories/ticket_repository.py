@@ -1,109 +1,71 @@
-from typing import Optional
-from app.core.db import get_connection
+from typing import Optional, Dict, Any, List
+from peewee import DoesNotExist, IntegrityError
+from app.models.ticket import Ticket
+from app.core.db import db
 
 
 def fetch_tickets(
-    status: str,
-    priority: str,
+    status: Optional[str],
+    priority: Optional[str],
     limit: int,
     offset: int,
-):
-    conn = get_connection()
-
-    query = "SELECT * FROM tickets WHERE 1=1"
-    params = []
+) -> List[Dict[str, Any]]:
+    query = Ticket.select()
 
     if status:
-        query += " AND status = ?"
-        params.append(status)
-
+        query = query.where(Ticket.status == status)
     if priority:
-        query += " AND priority = ?"
-        params.append(priority)
-
-    query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
-    params.extend([limit, offset])
-
-    rows = conn.execute(query, params).fetchall()
-    conn.close()
-    return rows
-
-
-def fetch_ticket_by_id(ticket_id: int):
-    conn = get_connection()
-    row = conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
-    conn.close()
-
-    return row
-
-
-def insert_ticket(title: str, description: str, status: str, priority: str):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        INSERT INTO tickets (title, description, status, priority)
-        VALUES (?, ?, ?, ?)
-        """,
-        (
-            title,
-            description,
-            status,
-            priority,
-        ),
+        query = query.where(Ticket.priority == priority)
+    
+    return list(
+        query
+        .limit(limit)
+        .offset(offset)
+        .dicts()
     )
 
-    conn.commit()
-    ticket_id = cursor.lastrowid
 
-    row = cursor.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
+def fetch_ticket_by_id(ticket_id: int) -> Optional[Dict[str, Any]]:
+    try:
+        return Ticket.get_by_id(ticket_id).__data__
+    except DoesNotExist:
+        return None
 
-    conn.close()
 
-    return row
+
+def insert_ticket(
+    title: str,
+    description: str,
+    status: str,
+    priority: str
+) -> Dict[str, Any]:
+    with db.atomic():
+        try:
+            ticket = Ticket.create(
+                title=title,
+                description=description,
+                status=status,
+                priority=priority
+            )
+            return ticket.__data__
+        except IntegrityError:
+            ticket = Ticket.get(
+                (Ticket.title == title) &
+                (Ticket.status == status)
+            )
+            return ticket.__data__
+
+
 
 
 def update_ticket_by_id(
     ticket_id: int,
-    title: Optional[str],
-    description: Optional[str],
-    status: Optional[str],
-    priority: Optional[str],
+    **data
 ):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        UPDATE tickets
-        SET title = COALESCE(?, title),
-            description = COALESCE(?, description),
-            status = COALESCE(?, status),
-            priority = COALESCE(?, priority),
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-        """,
-        (
-            title,
-            description,
-            status,
-            priority,
-            ticket_id,
-        ),
-    )
-
-    conn.commit()
-
-    row = cursor.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
-
-    conn.close()
-    return row
+    with db.atomic():
+        Ticket.update(**data).where(Ticket.id == ticket_id).execute()
+        return Ticket.get_by_id(ticket_id).__data__
 
 
 def delete_ticket_by_id(ticket_id: int):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM tickets WHERE id = ?", (ticket_id,))
-    conn.commit()
-    conn.close()
+    Ticket.delete_by_id(ticket_id)

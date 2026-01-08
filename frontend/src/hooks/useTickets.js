@@ -25,8 +25,15 @@ export function useTickets() {
   }
 
   const removeTicket = async (id) => {
-    await deleteTicket(id)
-    await fetchTickets()
+    try{
+      setLoading(true)
+      await deleteTicket(id)
+      await fetchTickets()
+    }catch (err){
+      setError(err.message)
+    }finally{
+      setLoading(false)
+    }
   }
 
   useEffect(() => {

@@ -1,20 +1,14 @@
-import sqlite3
+from peewee import SqliteDatabase
 from pathlib import Path
 from app.core.config import DB_PATH
 
-def get_connection():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
+db=SqliteDatabase(
+    DB_PATH,
+    pragmas={
+        "journal_mode": "wal",
+        "foreign_keys": 1
+    }
+)
 def init_db():
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    schema_path = Path(__file__).resolve().parent.parent / "db" / "schema.sql"
-    with open(schema_path, "r") as f:
-        cursor.executescript(f.read())
-
-    conn.commit()
-    conn.close()
+    if db.is_closed():
+        db.connect(reuse_if_open=True)
