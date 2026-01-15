@@ -3,7 +3,8 @@ import { getTickets, deleteTicket } from "@/components/Tickets/api/tickets"
 
 export function useTickets() {
   const [tickets, setTickets] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [listLoading, setlistLoading] = useState(true)
+  const [deleteLoading, setdeleteLoading] = useState(true)
   const [error, setError] = useState(null)
 
   const [filters, setFilters] = useState({
@@ -13,26 +14,26 @@ export function useTickets() {
   })
   const fetchTickets = async (customFilters = filters) => {
     try {
-      setLoading(true)
+      setlistLoading(true)
       setError(null)
       const data = await getTickets(customFilters)
       setTickets(data)
     } catch (err) {
       setError(err.message)
     } finally {
-      setLoading(false)
+      setlistLoading(false)
     }
   }
 
   const removeTicket = async (id) => {
     try{
-      setLoading(true)
+      setdeleteLoading(true)
       await deleteTicket(id)
       await fetchTickets()
     }catch (err){
       setError(err.message)
     }finally{
-      setLoading(false)
+      setdeleteLoading(false)
     }
   }
 
@@ -42,7 +43,8 @@ export function useTickets() {
 
   return {
     tickets,
-    loading,
+    listLoading,
+    deleteLoading,
     error,
     filters,
     setFilters,

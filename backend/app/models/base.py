@@ -1,6 +1,7 @@
-from peewee import Model
-from app.core.db import db
+from peewee import Model, DatabaseProxy
+
+database_proxy = DatabaseProxy()
 
 class BaseModel(Model):
     class Meta:
-        database = db
+        database = database_proxy

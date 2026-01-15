@@ -1,6 +1,7 @@
 from peewee import SqliteDatabase
-from pathlib import Path
 from app.core.config import DB_PATH
+from app.models.base import database_proxy
+
 
 db=SqliteDatabase(
     DB_PATH,
@@ -10,5 +11,7 @@ db=SqliteDatabase(
     }
 )
 def init_db():
-    if db.is_closed():
-        db.connect(reuse_if_open=True)
+    database_proxy.initialize(db)
+
+    from app.models.ticket import Ticket
+    db.create_tables([Ticket], safe=True)

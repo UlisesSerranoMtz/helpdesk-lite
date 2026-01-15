@@ -5,10 +5,8 @@ from app.core.db import init_db
 from app.api.v1.ticket import router as ticket_router
 from app.core.config import CORS_ORIGINS
 from app.core.middlewares.request_tracer import request_tracer_middleware
-from app.core.middlewares.request_id_tracer import request_id_tracer_middleware
 
 app = FastAPI(title="Helpdesk API")
-app.middleware("http")(request_id_tracer_middleware)
 app.middleware("http")(request_tracer_middleware)
 app.add_middleware(
     CORSMiddleware,

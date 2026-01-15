@@ -7,7 +7,8 @@ import { STATUS_LABEL, PRIORITY_LABEL } from "@/components/Tickets/constants/tic
 export default function TableList() {
   const {
     tickets,
-    loading,
+    listLoading,
+    deleteLoading,
     error,
     filters,
     setFilters,
@@ -16,14 +17,6 @@ export default function TableList() {
   } = useOutletContext()
 
   const deleteModalRef = useRef(null)
-
-  if (loading) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-base-100/70 z-50">
-        <span className="loading loading-spinner loading-xl"></span>
-      </div>
-    )
-  }  
 
   return (
     <>
@@ -54,61 +47,76 @@ export default function TableList() {
           <option value="high">High</option>
         </select>
       </div>
-
-      <table className="table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Title</th>
-            <th>Status</th>
-            <th>Priority</th>
-            <th className="text-center">Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {tickets.map((ticket) => (
-            <tr key={ticket.id} className="hover:bg-base-300">
-              <td>{ticket.id}</td>
-
-              <td>
-                <div className="font-semibold">{ticket.title}</div>
-                <div className="text-sm opacity-70">
-                  {ticket.description}
-                </div>
-              </td>
-
-              <td>
-                <span className="badge badge-outline">
-                  {STATUS_LABEL[ticket.status]}
-                </span>
-              </td>
-
-              <td>
-                <span
-                  className={`badge ${
-                    ticket.priority === "high"
-                      ? "badge-error"
-                      : ticket.priority === "medium"
-                      ? "badge-warning"
-                      : "badge-success"
-                  }`}
-                >
-                  {PRIORITY_LABEL[ticket.priority]}
-                </span>
-              </td>
-
-              <td className="text-center">
-                <TableActions
-                  onEdit={() => openEditTicket(ticket)}
-                  onDelete={() => deleteModalRef.current.open(ticket.id)}
-                />
-              </td>
+      {listLoading && tickets.length === 0 &&(
+        <div className="flex justify-center py-10">
+          <span className="loading loading-spinner loading-lg"></span>
+        </div>
+      )}
+      {error &&(
+        <div className="alert alert-error mb-4">
+          {error}
+        </div>
+      )}
+      {tickets.length > 0 &&(
+        <table className="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Status</th>
+              <th>Priority</th>
+              <th className="text-center">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-
+          </thead>
+  
+          <tbody>
+            {tickets.map((ticket) => (
+              <tr key={ticket.id} className="hover:bg-base-300">
+                <td>{ticket.id}</td>
+  
+                <td>
+                  <div className="font-semibold">{ticket.title}</div>
+                  <div className="text-sm opacity-70">
+                    {ticket.description}
+                  </div>
+                </td>
+  
+                <td>
+                  <span className="badge badge-outline">
+                    {STATUS_LABEL[ticket.status]}
+                  </span>
+                </td>
+  
+                <td>
+                  <span
+                    className={`badge ${
+                      ticket.priority === "high"
+                        ? "badge-error"
+                        : ticket.priority === "medium"
+                        ? "badge-warning"
+                        : "badge-success"
+                    }`}
+                  >
+                    {PRIORITY_LABEL[ticket.priority]}
+                  </span>
+                </td>
+  
+                <td className="text-center">
+                  <TableActions
+                    onEdit={() => openEditTicket(ticket)}
+                    onDelete={() => deleteModalRef.current.open(ticket.id)}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {!listLoading && tickets.length === 0 && !error &&(
+        <div className="text-center py-10 opacity-70">
+          No tickets found
+        </div>
+      )}
       <DeleteModal
         ref={deleteModalRef}
         onConfirm={removeTicket}
